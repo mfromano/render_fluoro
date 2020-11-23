@@ -82,27 +82,50 @@ class MakeCine(object):
         tmp = tmp > 0
         [x, y, w, h] = self.bounding_box(tmp.astype(np.uint8))
         self.img_stack = self.img_stack[y:y + h, x:x + w,:,:]
-        plt.imshow(self.img_stack[:,:,0,0])
+
+    def upsample_frames(self, upsample_ratio=2):
+        y,x,c,z = self.img_stack.shape
+        upsampled_stack = np.zeros((y*upsample_ratio, x*upsample_ratio, c, z))
+        for idx in range(z):
+            upsampled_stack[:,:,:,idx] = cv2.resize(np.squeeze(self.img_stack[:,:,:,idx]), (x*upsample_ratio, y*upsample_ratio), interpolation=cv2.INTER_AREA)
+        self.img_stack = upsampled_stack.astype(np.uint8) 
 
     def bounding_box(self, img):
         x, y, w, h = cv2.boundingRect(img)
         return [x,y,w,h]
 
-    def write_frames(self):
+    def write_frames(self, img_stack=None, prefix=''):
+        if img_stack is None:
+            img_stack = self.img_stack
+        if prefix == '':
+            prefix = 'img'
         if not os.path.isdir(self.outdir):
             os.mkdir(self.outdir)
-        for idx in range(self.img_stack.shape[-1]):
-            img = Image.fromarray(np.squeeze(self.img_stack[:,:,:,idx]))
-            img.save('{}/img{}.png'.format(self.outdir, str(idx).zfill(4)))
+        for idx in range(img_stack.shape[-1]):
+            img = Image.fromarray(np.squeeze(img_stack[:,:,:,idx]), 'RGB')
+            img.save('{}/{}{}.png'.format(self.outdir, prefix, str(idx).zfill(4)))
 
-    def interpolate_frames(self):
-        if not os.path.isdir(os.path.join(self.outdir, 'interpolated')):
-            os.mkdir(os.path.join(self.outdir, 'interpolated'))
-        arg = 'python3 unsupervised-video-interpolation/eval.py --model CycleHJSuperSloMo --num_interp 5 --flow_scale 2.0 --val_file {} --name superslomo --save {} --post_fix img_interp --resume unsupervised-video-interpolation/pretrained_models/baseline_superslomo_adobe+youtube.pth --write_images --val_sample_rate 0 --val_step_size 1'.format(self.outdir, os.path.join(self.outdir, 'interpolated'))
-        print(arg)
-        #os.system(arg)
-        self.image_files_new = np.sort(glob('{}/{}/{}'.format(self.outdir,'interpolated/superslomo','*.png')))
-        self.load_videos(self.image_files_new)
+    # adoped from https://github.com/ferreirafabio/video2tfrecord
+    def get_flow(self):
+        if not os.path.isdir(os.path.join(self.outdir, 'flow')):
+            os.mkdir(os.path.join(self.outdir, 'flow'))
+        flow=None
+        output = np.zeros_like(self.img_stack)
+        hsv = np.zeros(self.img_stack.shape[0:3])
+        hsv[...,1] = 255
+        for idx in range(self.img_stack.shape[-1]-1):
+            curr_frame = np.squeeze(self.img_stack[:,:,:,idx])
+            curr_frame = cv2.cvtColor(curr_frame.astype(np.uint8), cv2.COLOR_RGB2GRAY)
+            next_frame = np.squeeze(self.img_stack[:,:,:,idx+1])
+            next_frame = cv2.cvtColor(next_frame.astype(np.uint8), cv2.COLOR_RGB2GRAY)
+            flow = cv2.calcOpticalFlowFarneback(curr_frame, next_frame, flow=flow, pyr_scale=0.8, levels=15, winsize=5, iterations=10, poly_n=5, poly_sigma=0, flags=10)
+            mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+            hsv[..., 0] = ang * 180 / np.pi / 2
+            hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+            col= cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+            output[:,:,:,idx] = col
+        self.flow = output
+        self.write_frames(self.flow, prefix='flow_')
 
     def write_video(self):
         fps = self.fps
@@ -116,10 +139,16 @@ class MakeCine(object):
             output_writer.write(np.squeeze(self.img_stack[:, :, :, im_index]))
         output_writer.release()
 
+    def compute_flow(self):
+       pass 
+
+
 if __name__ == '__main__':
     cine = MakeCine()
     cine.load_videos()
     cine.remove_white_regions()
+    cine.upsample_frames()
     cine.write_frames()
-    cine.interpolate_frames()
-    cine.write_video()
+    cine.get_flow()
+#    cine.interpolate_frames()
+#    cine.write_video()
