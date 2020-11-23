@@ -127,16 +127,20 @@ class MakeCine(object):
         self.flow = output
         self.write_frames(self.flow, prefix='flow_')
 
-    def write_video(self):
+    def write_video(self, img_stack=None, outputname=''):
+        if img_stack is None:
+            img_stack = self.img_stack
+        if outputname == '':
+            outputname = self.output_name
         fps = self.fps
         codec = cv2.VideoWriter_fourcc(*'XVID')  # use the mp4v codec
-        shape = self.img_stack.shape[0:2]
+        shape = img_stack.shape[0:2]
         output_writer = cv2.VideoWriter(os.path.join(os.path.abspath('.'),
-                                                      self.outputname),
+                                                      outputname),
                                         codec,
                         float(fps), (shape[1],shape[0]))
-        for im_index in range(self.img_stack.shape[-1]):
-            output_writer.write(np.squeeze(self.img_stack[:, :, :, im_index]))
+        for im_index in range(img_stack.shape[-1]):
+            output_writer.write(np.squeeze(img_stack[:, :, :, im_index]))
         output_writer.release()
 
     def compute_flow(self):
@@ -149,6 +153,6 @@ if __name__ == '__main__':
     cine.remove_white_regions()
     cine.upsample_frames()
     cine.write_frames()
+    cine.write_video()
     cine.get_flow()
-#    cine.interpolate_frames()
-#    cine.write_video()
+    cine.write_video(cine.flow, 'flow_video.avi')
