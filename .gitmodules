@@ -1,6 +1,3 @@
-[submodule "unsupervised-video-interpolation"]
-	path = unsupervised-video-interpolation
-	url = https://github.com/NVIDIA/unsupervised-video-interpolation
 [submodule "Super-SloMo"]
 	path = Super-SloMo
 	url = https://github.com/avinashpaliwal/Super-SloMo
