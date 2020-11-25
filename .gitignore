@@ -1,2 +1,6 @@
 render_fluoro
 .torch
+*.mp4
+*/**.mp4
+*/**.ckpt
+*/**.png
