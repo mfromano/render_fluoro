@@ -131,10 +131,13 @@ class Cine(object):
             image_array.append(im)
         return image_array
 
-    def upsample_frames(self, img_stack=None, upsample_ratio=2):
+    def upsample_frames(self, img_stack=None, upsample_ratio=-1):
         if img_stack is None:
             img_stack = self.img_stack
         y, x = img_stack[0].shape[:2]
+        if upsample_ratio < 0:
+            max_dim = np.max([y,x])
+            upsample_ratio = 4000//max_dim
         upsampled_stack = []
         for idx in range(len(img_stack)):
             upsampled_stack.append(cv2.resize(img_stack[idx], (
@@ -169,6 +172,7 @@ if __name__ == '__main__':
     parser.add_argument('--fps_out', dest='fps_out', default=20)
     parser.add_argument('--alpha', dest='alpha', default=0.8)
     parser.add_argument('--get_flow', dest='get_flow', default=None)
+    parser.add_argument('--upsample_ratio', dest='upsample',default=2)
 
     args = parser.parse_args()
     cine = Cine(initdir=args.initdir,
@@ -186,7 +190,7 @@ if __name__ == '__main__':
                                     suffix='_fluoro')
 
     frames = cine.frames_from_video(interpolated_fluoro)
-    frames_upsampled = cine.upsample_frames(frames)
+    frames_upsampled = cine.upsample_frames(frames, int(args.upsample))
     cine.write_cine(frames_upsampled, outputname = '{}_fluoro_cine.mp4'.format(args.outputprefix), fps=int(args.fps_out))
 
     if args.get_flow:
@@ -198,7 +202,7 @@ if __name__ == '__main__':
             fps=args.fps_out,
             suffix='_flow')
         flow = cine.frames_from_video(interpolated_flow)
-        flow_upsampled = cine.upsample_frames(flow)
+        flow_upsampled = cine.upsample_frames(flow, int(args.upsample))
         cine.write_cine(flow_upsampled, outputname = '{}_flow_cine.mp4'.format(args.outputprefix), fps=int(args.fps_out))
         stack = cine.blend_flow_and_stack(frames_upsampled,flow_upsampled,alpha=0.5)
         cine.write_cine(stack, '{}_cine_blend.mp4'.format(args.outputprefix), fps=int(args.fps_out))
