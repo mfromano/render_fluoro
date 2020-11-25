@@ -1,0 +1,7 @@
+[submodule "Super-SloMo"]
+<<<<<<< HEAD
+	path = SuperSloMo
+=======
+	path = Super-SloMo
+>>>>>>> a20e599b6a7786109d778a454d8974140a89ff55
+	url = https://github.com/avinashpaliwal/Super-SloMo
