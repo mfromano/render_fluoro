@@ -93,7 +93,6 @@ class Cine(object):
             hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
             col = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB)
             output.append(col)
-        self.write_cine_frames(output, prefix='{}/flow_'.format('flow'))
         return output
 
 
@@ -169,33 +168,37 @@ if __name__ == '__main__':
                         default=5)
     parser.add_argument('--fps_out', dest='fps_out', default=20)
     parser.add_argument('--alpha', dest='alpha', default=0.8)
+    parser.add_argument('--get_flow', dest='get_flow', default=None)
+
     args = parser.parse_args()
-    cine = MakeCine(initdir=args.initdir,
+    cine = Cine(initdir=args.initdir,
                     outdir=args.outdir,
                     outputname=args.outputprefix,
                     fps=args.fps_in)
-    flow = cine.compute_flow()
     cine.write_cine_frames()
-    fluoro_video = cine.write_cine(cine.img_stack, 'cine_cropped.mp4')
-    flow_video = cine.write_cine(flow, 'flow_cropped.mp4')
-    interpolated_fluoro = cine.interpolated_frames(
-                                fluoro_video,
-                                factor=args.factor,
-                                fps=args.fps_out,
-                                suffix='_fluoro')
+    if args.get_flow:
+        flow = cine.compute_flow()
+    fluoro_video = cine.write_cine(cine.img_stack, 'cine_cropped.mp4', fps=int(args.fps_in))
+    interpolated_fluoro = cine.interpolate_frames(
+                                    fluoro_video,
+                                    factor=args.factor,
+                                    fps=args.fps_out,
+                                    suffix='_fluoro')
 
-    interpolated_flow = cine.interpolated_frames(
-                                flow_video,
-                                factor=args.factor,
-                                fps=args.fps_out,
-                                suffix='_flow')
-
-    frames = cine.frames_from_video(interpolated_video)
+    frames = cine.frames_from_video(interpolated_fluoro)
     frames_upsampled = cine.upsample_frames(frames)
-    cine.write_cine(frames_upsampled, outputname = '{}_fluoro_cine.mp4'.format(args.outputprefix))
+    cine.write_cine(frames_upsampled, outputname = '{}_fluoro_cine.mp4'.format(args.outputprefix), fps=int(args.fps_out))
 
-    flow = cine.frames_from_video(interpolated_flow)
-    flow_upsampled = flow.upsample_frames(flow)
-    cine.write_cine(flow_upsampled, outputname = '{}_flow_cine.mp4'.format(args.outputprefix))
-    stack = cine.blend_flow_and_stack(frames_upsampled,flow_upsampled,alpha=0.5)
-    cine.write_cine(stack, '{}_cine_blend.mp4'.format(args.outputprefix))
+    if args.get_flow:
+        flow_video = cine.write_cine(flow, 'flow_cropped.mp4', fps=int(args.fps_in))
+
+        interpolated_flow = cine.interpolate_frames(
+            flow_video,
+            factor=args.factor,
+            fps=args.fps_out,
+            suffix='_flow')
+        flow = cine.frames_from_video(interpolated_flow)
+        flow_upsampled = cine.upsample_frames(flow)
+        cine.write_cine(flow_upsampled, outputname = '{}_flow_cine.mp4'.format(args.outputprefix), fps=int(args.fps_out))
+        stack = cine.blend_flow_and_stack(frames_upsampled,flow_upsampled,alpha=0.5)
+        cine.write_cine(stack, '{}_cine_blend.mp4'.format(args.outputprefix), fps=int(args.fps_out))
