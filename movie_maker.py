@@ -8,6 +8,7 @@ Created on Sat Apr 11 15:04:13 2020
 
 import argparse
 import os
+from tqdm import tqdm
 import tkinter as tk
 from glob import glob
 import cv2
@@ -79,7 +80,8 @@ class Cine(object):
         output = []
         hsv = np.zeros(self.img_stack[0].shape)
         hsv[..., 1] = 255
-        for idx in range(len(self.img_stack)-1):
+        print('Computing flow...')
+        for idx in tqdm(range(len(self.img_stack)-1)):
             curr_frame = self.img_stack[idx]
             curr_frame = cv2.cvtColor(
                 curr_frame.astype(np.uint8), cv2.COLOR_BGR2GRAY)
@@ -115,7 +117,9 @@ class Cine(object):
         return outputname
 
     def interpolate_frames(self, video, factor=5, batch_size=2, fps=20, suffix=''):
-        main(video, self.checkpoint, self.outdir + '/interpolated_video{}.mp4'.format(suffix), batch_size, factor, fps)
+        if int(batch_size) < 2:
+            batch_size = len(self.img_stack)
+        main(video, self.checkpoint, self.outdir + '/interpolated_video{}.mp4'.format(suffix), int(batch_size), factor, fps)
         interpolated_videoname = self.outdir + '/interpolated_video{}.mp4'.format(suffix)
         return interpolated_videoname
 
@@ -135,9 +139,11 @@ class Cine(object):
         if img_stack is None:
             img_stack = self.img_stack
         y, x = img_stack[0].shape[:2]
+        print('Initial dims: {}x{}'.format(x,y))
         if upsample_ratio < 0:
             max_dim = np.max([y,x])
-            upsample_ratio = 4000//max_dim
+            upsample_ratio = 3000//max_dim
+        print('Final dims: {}x{}'.format(x*upsample_ratio,y*upsample_ratio))
         upsampled_stack = []
         for idx in range(len(img_stack)):
             upsampled_stack.append(cv2.resize(img_stack[idx], (
@@ -172,7 +178,8 @@ if __name__ == '__main__':
     parser.add_argument('--fps_out', dest='fps_out', default=20)
     parser.add_argument('--alpha', dest='alpha', default=0.8)
     parser.add_argument('--get_flow', dest='get_flow', default=None)
-    parser.add_argument('--upsample_ratio', dest='upsample',default=2)
+    parser.add_argument('--upsample_ratio', dest='upsample',default=-1)
+    parser.add_argument('--batch_size', dest='batch', default=2)
 
     args = parser.parse_args()
     cine = Cine(initdir=args.initdir,
@@ -183,11 +190,15 @@ if __name__ == '__main__':
     if args.get_flow:
         flow = cine.compute_flow()
     fluoro_video = cine.write_cine(cine.img_stack, 'cine_cropped.mp4', fps=int(args.fps_in))
-    interpolated_fluoro = cine.interpolate_frames(
-                                    fluoro_video,
-                                    factor=args.factor,
-                                    fps=args.fps_out,
-                                    suffix='_fluoro')
+    if int(args.factor) > 1:
+        interpolated_fluoro = cine.interpolate_frames(
+                                        fluoro_video,
+                                        batch_size=args.batch,
+                                        factor=args.factor,
+                                        fps=args.fps_out,
+                                        suffix='_fluoro')
+    else:
+        interpolated_fluoro=fluoro_video
 
     frames = cine.frames_from_video(interpolated_fluoro)
     frames_upsampled = cine.upsample_frames(frames, int(args.upsample))
