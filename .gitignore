@@ -5,3 +5,5 @@ render_fluoro
 */**.ckpt
 */**.png
 *.png
+.idea
+__pycache__
