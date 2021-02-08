@@ -6,3 +6,4 @@ render_fluoro
 */**.png
 *.png
 .idea
+__pycache__
