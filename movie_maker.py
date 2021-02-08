@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 from eval_new import main
+from tqdm import tqdm
 
 class Cine(object):
     def __init__(self, initdir='.', outdir='./cropped_files', outputname='video.mp4', fps=5):
@@ -34,6 +35,9 @@ class Cine(object):
         img_stack = []
         for filename in filenames:
             img = cv2.imread(filename)
+            if img is None:
+                print('Skipping ' + filename)
+                continue
             img_stack.append(img)
         self.img_stack = img_stack
 
@@ -111,7 +115,8 @@ class Cine(object):
             os.path.join(os.path.abspath('.'), outputname),
             codec,
             float(fps), (shape[1], shape[0]))
-        for idx in range(len(img_stack)):
+        print('Writing video')
+        for idx in tqdm(range(len(img_stack))):
             output_writer.write(img_stack[idx])
         output_writer.release()
         return outputname
@@ -145,7 +150,8 @@ class Cine(object):
             upsample_ratio = 3000//max_dim
         print('Final dims: {}x{}'.format(x*upsample_ratio,y*upsample_ratio))
         upsampled_stack = []
-        for idx in range(len(img_stack)):
+        print('upsampling video')
+        for idx in tqdm(range(len(img_stack))):
             upsampled_stack.append(cv2.resize(img_stack[idx], (
                 x * upsample_ratio, y * upsample_ratio), interpolation=cv2.INTER_AREA))
         return upsampled_stack

@@ -10,7 +10,7 @@ import numpy as np
 from SuperSloMo import model
 from torchvision import transforms
 from torch.functional import F
-
+from tqdm import tqdm
 
 torch.set_grad_enabled(False)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
