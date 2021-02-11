@@ -1,5 +1,6 @@
 """
 Converts a Video to SuperSloMo version
+###modified by Michael Romano from SuperSloMo directory for use in Render_Fluoro
 """
 from time import time
 import click
