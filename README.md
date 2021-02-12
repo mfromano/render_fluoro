@@ -25,3 +25,7 @@ conda activate render_fluoro
 conda install pytorch=0.4.1 cuda92 torchvision==0.2.1 -c pytorch
 conda install opencv
 ```
+Finally, download the checkpoint for the trained SuperSloMo model specified here:
+1. https://github.com/avinashpaliwal/Super-SloMo/tree/544802b543e4aaaa707ebac6ae6c61e1da72a6f6 
+2. Create a new folder entitled "checkpoints" under Super-SloMo.
+3. Move the newly downloaded checkpoint into this folder.
