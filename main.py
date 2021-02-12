@@ -18,13 +18,13 @@ for dir in dirs:
     #     batch_size = 5
     if len_dir > 1:
         fps_in = 2
-        fps_out = 10
-        scaling = 5
+        fps_out = 4
+        scaling = 2
         batch_size = 2
     else:
         continue
     newname = '_'.join([prefix, dir])
     print(f'python movie_maker.py --indir {os.path.join(init_dir,dir)} ' +\
-                    f'--outputpref {newname} --fps_in 5 --fps_out {fps_out} --scaling_factor {scaling} --batch_size {batch_size}')
+                    f'--outputpref {newname} --fps_in {fps_in} --fps_out {fps_out} --scaling_factor {scaling} --batch_size {batch_size}')
     subprocess.run( f'python movie_maker.py --indir {os.path.join(init_dir,dir)} ' +\
-                    f'--outputpref {newname} --fps_in 5 --fps_out {fps_out} --scaling_factor {scaling} --batch_size {batch_size}', shell=True)
+                    f'--outputpref {newname} --fps_in {fps_in} --fps_out {fps_out} --scaling_factor {scaling} --batch_size {batch_size}', shell=True)

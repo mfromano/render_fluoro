@@ -43,7 +43,9 @@ class Cine(object):
 
     def _crop_cine(self):
         img_stack = self.img_stack
-        img = np.max(img_stack[0],axis=2).astype(np.uint8)
+        img_stack_max = list(map(lambda x: np.max(x, axis=2, keepdims=True), img_stack))
+        img_stack_max_concat = np.concatenate(img_stack_max, axis=2)
+        img = np.max(img_stack_max_concat, axis=2).astype(np.uint8)
         white_mask = np.ones(img.shape[:2], dtype=np.uint8)
         x, y, w, h = 0, 0, 1000, 100
         white_mask[y:y + h, x:x + w] = 0
