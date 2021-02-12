@@ -23,4 +23,5 @@ To install dependencies for windows:
 conda create -n render_fluoro python=3.6 anaconda
 conda activate render_fluoro
 conda install pytorch=0.4.1 cuda92 torchvision==0.2.1 -c pytorch
+conda install opencv
 ```
