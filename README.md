@@ -18,11 +18,9 @@ python movie_maker.py --indir example_dir --outputpref example_ --fps_in 5 --fps
 ```
 This line of code will take tiff files from example_dir, automatically ordered, crop them, produce a video at 5Hz with no frame upscaling, and will upsample the pixel dimensions using the default method (argmax where max dimension < 2000). No flow video will be produced. output video will be called example_fluoro_cine.mp4.
 
-Please install the dependencies stored in reqs.txt via:
+To install dependencies for windows:
 ```
-pip install -r reqs.txt
-```
-or with anaconda:
-```
-conda env create -f reqs.yml
+conda create -n render_fluoro python=3.6 anaconda
+conda activate render_fluoro
+conda install pytorch=0.4.1 cuda92 torchvision==0.2.1 -c pytorch
 ```
